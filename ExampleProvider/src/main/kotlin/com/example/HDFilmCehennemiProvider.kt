@@ -1,52 +1,31 @@
-// HDFilmCehennemiProvider.kt
-package com.example
+package com.yunusemre
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.*
 
-// Site: https://www.hdfilmcehennemi.nl
-class HDFilmCehennemiProvider : MainAPI() {
-    // Eklentinin adı (Cloudstream'de görünecek)
-    override var name: String = "HDFilmCehennemi.nl (TR)"
+class HDFilmCehennemiProvider : MainAPI() { 
+    override var mainUrl = "https://www.hdfilmcehennemi.nl"
+    override var name = "HDFilmCehennemi"
+    override val hasMainPage = true
+    override var lang = "tr"
+    override val supportedTypes = setOf(TvType.Movie, TvType.TvSeries)
 
-    // Sitenin ana URL'si
-    override var mainUrl: String = "https://www.hdfilmcehennemi.nl"
-
-    // Bu eklentinin hangi dildeki içerikleri sağladığı
-    override var lang: String = "tr"
-
-    // Bu eklentinin hangi tür içerikleri sağladığı (Film, Dizi vb.)
-    override var mainTypes = setOf(TvType.Movie)
-
-    // Sitenin arama yapılacak URL'si
-    override suspend fun search(query: String): List<SearchResponse> {
-        // TODO: Arama işlevi eklenecek
-        return listOf()
+    override suspend fun getMainPage(page: Int, request: HomePageRequest): HomePageResponse {
+        // Burası sitenin ana sayfasındaki filmleri çekmek içindir
+        val document = app.get(mainUrl).document
+        val home = document.select("div.poster").mapNotNull {
+            it.toSearchResult()
+        }
+        return newHomePageResponse(request.name, home)
     }
 
-    // Ana sayfadaki film listelerini döndürür
-    override suspend fun getMainPage(
-        page: Int,
-        request: MainPageRequest
-    ): HomePageResponse {
-        // TODO: Ana sayfa içeriği eklenecek
-        return HomePageResponse(emptyList())
-    }
+    private fun Element.toSearchResult(): SearchResponse? {
+        val title = this.selectFirst("h2")?.text() ?: return null
+        val href = fixUrl(this.selectFirst("a")?.attr("href") ?: return null)
+        val posterUrl = fixUrl(this.selectFirst("img")?.attr("data-src") ?: "")
 
-    // Bir film veya dizinin detay sayfasını ayrıştırır
-    override suspend fun load(url: String): LoadResponse? {
-        // TODO: Detay sayfası ayrıştırma eklenecek
-        return null
-    }
-
-    // Seçilen bir bölüm veya filmin video linklerini bulur
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        // TODO: Video linki çekme işlevi eklenecek
-        return false
+        return newMovieSearchResponse(title, href, TvType.Movie) {
+            this.posterUrl = posterUrl
+        }
     }
 }
