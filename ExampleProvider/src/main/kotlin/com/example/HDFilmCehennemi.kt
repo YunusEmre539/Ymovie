@@ -1,4 +1,4 @@
-package com.yunusemre
+package com.example
 
 import org.jsoup.nodes.Element
 import com.lagradost.cloudstream3.*
